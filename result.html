@@ -1,0 +1,513 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2025 Luck Test Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .wheel-container {
+            max-width: 600px;
+            margin: 50px auto;
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .wheel {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto;
+            background: conic-gradient(
+                #ff4d4d 0deg 36deg, /* 1 */
+                #ff7f50 36deg 72deg, /* 2 */
+                #ffa500 72deg 108deg, /* 3 */
+                #ffd700 108deg 144deg, /* 4 */
+                #adff2f 144deg 180deg, /* 5 */
+                #7fff00 180deg 216deg, /* 6 */
+                #32cd32 216deg 252deg, /* 7 */
+                #00ff7f 252deg 288deg, /* 8 */
+                #00b7eb 288deg 324deg, /* 9 */
+                #1e90ff 324deg 360deg /* 10 */
+            );
+            transition: transform 3s ease-out;
+        }
+        .wheel::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 20px solid black;
+        }
+        .wheel-number {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+        .wheel-number span {
+            position: absolute;
+            transform: rotate(var(--angle)) translate(120px) rotate(calc(-1 * var(--angle)));
+        }
+        .result-container {
+            margin-top: 20px;
+            display: none;
+            text-align: left;
+        }
+        .language-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .back-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="language-toggle">
+        <button id="toggle-lang" class="btn btn-primary">Switch to Chinese</button>
+    </div>
+    <div class="container">
+        <div class="wheel-container">
+            <h2 id="title">Spin to Test Your 2025 Luck!</h2>
+            <div class="wheel" id="wheel">
+                <div class="wheel-number">
+                    <span style="--angle: 0deg;">10</span>
+                    <span style="--angle: 36deg;">9</span>
+                    <span style="--angle: 72deg;">8</span>
+                    <span style="--angle: 108deg;">7</span>
+                    <span style="--angle: 144deg;">6</span>
+                    <span style="--angle: 180deg;">5</span>
+                    <span style="--angle: 216deg;">4</span>
+                    <span style="--angle: 252deg;">3</span>
+                    <span style="--angle: 288deg;">2</span>
+                    <span style="--angle: 324deg;">1</span>
+                </div>
+            </div>
+            <button id="spin-button" class="btn btn-primary mt-3">Spin the Wheel</button>
+            <div class="result-container" id="result-container">
+                <h3 id="result-title">Your Luck Score: <span id="result-score"></span></h3>
+                <p><strong id="result-subtitle"></strong></p>
+                <p><strong id="fengshui-title">Feng Shui Background:</strong> <span id="fengshui-desc"></span></p>
+                <p><strong id="events-title">What Might Happen:</strong></p>
+                <ul id="events-list"></ul>
+                <p><strong id="tips-title">Feng Shui Tips:</strong> <span id="tips-desc"></span></p>
+            </div>
+        </div>
+    </div>
+    <div class="back-button">
+        <button id="back-home" class="btn btn-secondary">Back to Home</button>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                title: "Spin to Test Your 2025 Luck!",
+                spinButton: "Spin the Wheel",
+                resultTitle: "Your Luck Score: ",
+                fengshuiTitle: "Feng Shui Background: ",
+                eventsTitle: "What Might Happen: ",
+                tipsTitle: "Feng Shui Tips: ",
+                backButton: "Back to Home",
+                toggleLang: "Switch to Chinese"
+            },
+            zh: {
+                title: "旋轉測試你的2025年運氣！",
+                spinButton: "旋轉轉輪",
+                resultTitle: "你的運氣分數：",
+                fengshuiTitle: "風水背景：",
+                eventsTitle: "可能事件：",
+                tipsTitle: "風水建議：",
+                backButton: "返回主頁",
+                toggleLang: "切換到英文"
+            }
+        };
+
+        const luckData = {
+            10: {
+                zh: {
+                    subtitle: "鴻運當頭，吉星高照",
+                    fengshui: "家居或辦公室位於2025年吉方（如八白左輔星飛臨的東南方，代表財運與喜慶），環境整潔明亮，風水佈局得宜（如擺放催財物品如流水擺件或綠色植物）。個人命盤與流年太歲相合，無沖犯。",
+                    events: [
+                        "事業：升職加薪或創業成功，關鍵項目獲得突破，貴人相助。",
+                        "財運：正財偏財皆旺，可能有意外之財，如投資回報或中獎。",
+                        "感情：單身者遇良緣，已婚者感情穩定，家庭和睦。",
+                        "健康：精力充沛，無重大疾病，適合進行長期健康計劃。",
+                        "其他：學業順利，考試高分，旅行或搬遷皆順心。"
+                    ],
+                    tips: "在東南方放置招財貓或黃色水晶，保持空間通風明亮，避免雜物堆積。"
+                },
+                en: {
+                    subtitle: "Great Fortune, Blessed by Lucky Stars",
+                    fengshui: "Your home or office is in a fortunate direction for 2025 (e.g., the southeast, governed by the Eight White Star, symbolizing wealth and prosperity). The environment is clean, bright, and well-arranged with prosperity-enhancing items like water features or green plants. Your personal destiny aligns perfectly with the year's Tai Sui, free of conflicts.",
+                    events: [
+                        "Career: Expect promotions, raises, or successful entrepreneurial ventures; key projects will see breakthroughs with support from influential figures.",
+                        "Wealth: Both primary and secondary income sources flourish; unexpected gains like investment returns or lottery wins are possible.",
+                        "Love: Singles may find true love; couples enjoy stable, harmonious relationships.",
+                        "Health: Full of vitality with no major illnesses; ideal for long-term wellness plans.",
+                        "Other: Academic success, high exam scores, and smooth travel or relocation."
+                    ],
+                    tips: "Place a lucky cat or yellow crystal in the southeast, keep the space airy and bright, and avoid clutter."
+                }
+            },
+            9: {
+                zh: {
+                    subtitle: "順風順水，機遇頻現",
+                    fengshui: "家居吉方（如一白貪狼星飛臨的正北方，利人際與桃花）得到催旺，命盤與流年五行相生（如木火相生）。",
+                    events: [
+                        "事業：工作穩定，獲上司賞識，合作項目進展順利。",
+                        "財運：正財穩定，偏財需謹慎但有小收穫。",
+                        "感情：單身者有浪漫邂逅，戀愛中人感情升溫。",
+                        "健康：小病小痛快速恢復，精神狀態良好。",
+                        "其他：人際關係和諧，朋友或同事提供關鍵支持。"
+                    ],
+                    tips: "在正北方放置圓形金屬飾品或水元素擺件，增強人際運。"
+                },
+                en: {
+                    subtitle: "Smooth Sailing, Abundant Opportunities",
+                    fengshui: "Your home’s favorable direction (e.g., the north, governed by the One White Star, boosting relationships and romance) is activated. Your destiny harmonizes with the year’s elemental cycle (e.g., Wood and Fire synergy).",
+                    events: [
+                        "Career: Stable job, appreciated by superiors, and smooth progress in collaborative projects.",
+                        "Wealth: Steady main income, cautious side ventures yield small gains.",
+                        "Love: Singles encounter romantic moments; couples deepen their bond.",
+                        "Health: Quick recovery from minor ailments, strong mental state.",
+                        "Other: Harmonious relationships, key support from friends or colleagues."
+                    ],
+                    tips: "Place round metal decorations or water elements in the north to enhance social luck."
+                }
+            },
+            8: {
+                zh: {
+                    subtitle: "穩中有進，小有成就",
+                    fengshui: "家居無明顯煞氣，吉方（如六白武曲星的西北方，利事業與貴人）略有催旺，個人命盤與流年無大沖突。",
+                    events: [
+                        "事業：工作進展平穩，偶有挑戰但能克服，獲小成就。",
+                        "財運：收入穩定，投資需謹慎，避免高風險項目。",
+                        "感情：感情平穩，偶有小爭執但不影響大局。",
+                        "健康：健康無大礙，注意飲食與作息平衡。",
+                        "其他：學業或個人計劃穩步推進，適合學習新技能。"
+                    ],
+                    tips: "在西北方擺放金屬風鈴或文昌塔，利事業與學習。"
+                },
+                en: {
+                    subtitle: "Steady Progress, Modest Achievements",
+                    fengshui: "Your home has no significant negative energy, with a lucky direction (e.g., northwest, governed by the Six White Star, aiding career and mentors) slightly enhanced. Your destiny has no major conflicts with the year.",
+                    events: [
+                        "Career: Steady work progress, overcoming occasional challenges, achieving small successes.",
+                        "Wealth: Stable income, cautious investments to avoid high-risk ventures.",
+                        "Love: Stable relationships, minor disputes don’t disrupt harmony.",
+                        "Health: Generally healthy, maintain balanced diet and sleep.",
+                        "Other: Steady progress in studies or plans, good time to learn new skills."
+                    ],
+                    tips: "Place a metal wind chime or scholar tower in the northwest to boost career and learning."
+                }
+            },
+            7: {
+                zh: {
+                    subtitle: "平穩過渡，略有波折",
+                    fengshui: "家居風水無大問題，但吉方未完全催旺，凶方（如二黑病符星的東北方）有輕微煞氣未化解。",
+                    events: [
+                        "事業：工作進展緩慢，需付出更多努力，小心與同事誤會。",
+                        "財運：正財正常，偏財運平平，避免衝動消費。",
+                        "感情：感情穩定但缺乏激情，需主動溝通。",
+                        "健康：偶有小病，如感冒或腸胃不適，注意保暖與飲食。",
+                        "其他：計劃可能遇小阻礙，但耐心可解決。"
+                    ],
+                    tips: "在東北方放置葫蘆或銅器化解病符星煞氣，保持家居清潔。"
+                },
+                en: {
+                    subtitle: "Stable Transition, Minor Setbacks",
+                    fengshui: "Your home’s Feng Shui is acceptable but not fully optimized; an unlucky direction (e.g., northeast, governed by the Two Black Illness Star) has minor negative energy unresolved.",
+                    events: [
+                        "Career: Slow work progress, requiring extra effort; beware of misunderstandings with colleagues.",
+                        "Wealth: Regular income, flat side earnings, avoid impulsive spending.",
+                        "Love: Stable but passionless relationships, communicate proactively.",
+                        "Health: Occasional minor illnesses like colds or digestive issues, focus on warmth and diet.",
+                        "Other: Plans face small obstacles, resolvable with patience."
+                    ],
+                    tips: "Place a gourd or copper item in the northeast to dispel illness energy, keep your home clean."
+                }
+            },
+            6: {
+                zh: {
+                    subtitle: "小有挑戰，需謹慎應對",
+                    fengshui: "家居凶方（如五黃大煞的正西方）未完全化解，個人命盤與流年略有沖克。",
+                    events: [
+                        "事業：工作壓力增加，可能遇小人或項目延誤。",
+                        "財運：財務波動，需控制開支，避免借貸。",
+                        "感情：感情易生誤會，需坦誠相待以免爭吵。",
+                        "健康：注意慢性病復發或疲勞，定期檢查身體。",
+                        "其他：計劃易受外力干擾，需靈活調整。"
+                    ],
+                    tips: "在正西方放置六枚銅錢或白色地毯化解五黃煞，減少尖銳物品擺放。"
+                },
+                en: {
+                    subtitle: "Minor Challenges, Proceed Cautiously",
+                    fengshui: "An unlucky direction in your home (e.g., west, governed by the Five Yellow Disaster Star) isn’t fully resolved, and your destiny slightly clashes with the year.",
+                    events: [
+                        "Career: Increased work pressure, possible troublemakers or project delays.",
+                        "Wealth: Fluctuating finances, control spending, avoid loans.",
+                        "Love: Relationships prone to misunderstandings, be honest to prevent arguments.",
+                        "Health: Watch for chronic illness flare-ups or fatigue, get regular checkups.",
+                        "Other: Plans disrupted by external factors, stay flexible."
+                    ],
+                    tips: "Place six copper coins or a white rug in the west to neutralize the Five Yellow, avoid sharp objects."
+                }
+            },
+            5: {
+                zh: {
+                    subtitle: "運勢平平，謹慎為上",
+                    fengshui: "家居風水佈局一般，吉凶方位未有效調整，個人命盤與流年五行略有不合。",
+                    events: [
+                        "事業：工作進展停滯，需重新審視目標與策略。",
+                        "財運：收入勉強維持，需避免大額投資。",
+                        "感情：感情冷淡，單身者難遇良緣，需耐心等待。",
+                        "健康：健康狀況一般，注意壓力導致的精神疲憊。",
+                        "其他：學業或計劃進展緩慢，需專注細節。"
+                    ],
+                    tips: "全面檢查家居風水，確保門窗通風，清理雜物以提升氣場。"
+                },
+                en: {
+                    subtitle: "Neutral Luck, Stay Cautious",
+                    fengshui: "Your home’s Feng Shui is average, with no effective adjustments to lucky or unlucky directions. Your destiny slightly misaligns with the year’s elements.",
+                    events: [
+                        "Career: Work stalls, reassess goals and strategies.",
+                        "Wealth: Income barely sufficient, avoid large investments.",
+                        "Love: Lackluster relationships, singles struggle to find love, be patient.",
+                        "Health: Average health, watch for stress-induced mental fatigue.",
+                        "Other: Slow progress in studies or plans, focus on details."
+                    ],
+                    tips: "Thoroughly check your home’s Feng Shui, ensure ventilation, and clear clutter to boost energy."
+                }
+            },
+            4: {
+                zh: {
+                    subtitle: "運勢低迷，小心行事",
+                    fengshui: "家居位於凶方（如三碧是非星的正南方）影響明顯，風水物品擺放不當，個人命盤沖太歲或犯凶星。",
+                    events: [
+                        "事業：工作遇阻，易與上司或同事發生爭執。",
+                        "財運：財務緊張，可能有意外支出，謹防詐騙。",
+                        "感情：感情不順，易有爭吵或分手危機。",
+                        "健康：易感疲勞或小病纏身，需注意休息。",
+                        "其他：計劃易失敗，需低調行事，避免衝動。"
+                    ],
+                    tips: "在正南方放置紅色地毯或燈飾化解是非星，佩戴護身符增運。"
+                },
+                en: {
+                    subtitle: "Low Luck, Act Carefully",
+                    fengshui: "Your home is affected by an unlucky direction (e.g., south, governed by the Three Blue Dispute Star), with improper Feng Shui items. Your destiny clashes with Tai Sui or unlucky stars.",
+                    events: [
+                        "Career: Work obstacles, likely disputes with superiors or colleagues.",
+                        "Wealth: Financial strain, unexpected expenses, beware of scams.",
+                        "Love: Rocky relationships, prone to arguments or breakup risks.",
+                        "Health: Frequent fatigue or minor illnesses, prioritize rest.",
+                        "Other: Plans likely to fail, stay low-key, avoid impulsiveness."
+                    ],
+                    tips: "Place a red rug or light in the south to resolve dispute energy, wear a protective amulet."
+                }
+            },
+            3: {
+                zh: {
+                    subtitle: "困難重重，需積極化解",
+                    fengshui: "家居風水嚴重失衡，凶方（如七赤破軍星的正東方）煞氣未化解，個人命盤與流年嚴重沖克。",
+                    events: [
+                        "事業：事業受阻，可能面臨失業或項目失敗。",
+                        "財運：財務危機，入不敷出，需嚴格理財。",
+                        "感情：感情破裂風險高，需冷靜處理矛盾。",
+                        "健康：健康惡化，易患急性疾病，需及時就醫。",
+                        "其他：人際關係緊張，易遇官非或口舌是非。"
+                    ],
+                    tips: "在正東方放置水晶球或黑色飾品化解破軍星，尋求專業風水師指導。"
+                },
+                en: {
+                    subtitle: "Numerous Obstacles, Actively Resolve",
+                    fengshui: "Your home’s Feng Shui is severely imbalanced, with an unlucky direction (e.g., east, governed by the Seven Red Violence Star) harboring unresolved negative energy. Your destiny strongly conflicts with the year.",
+                    events: [
+                        "Career: Career setbacks, possible unemployment or project failures.",
+                        "Wealth: Financial crisis, expenses exceed income, strict budgeting needed.",
+                        "Love: High risk of relationship breakdowns, handle conflicts calmly.",
+                        "Health: Worsening health, prone to acute illnesses, seek medical attention promptly.",
+                        "Other: Tense relationships, potential legal or gossip issues."
+                    ],
+                    tips: "Place a crystal ball or black decor in the east to dispel violence energy, consult a Feng Shui expert."
+                }
+            },
+            2: {
+                zh: {
+                    subtitle: "危機四伏，需全面調整",
+                    fengshui: "家居風水大凶（如多重煞氣疊加，門窗對沖或長期陰暗），個人命盤與流年嚴重不合，犯太歲或墓庫運。",
+                    events: [
+                        "事業：事業停滯，職場競爭激烈，易被邊緣化。",
+                        "財運：嚴重財務損失，可能破財或負債。",
+                        "感情：感情徹底破裂，單身者無桃花，已婚者需防第三者。",
+                        "健康：重大健康問題，需關注消費或醫療相關問題。",
+                        "其他：計劃全面受挫，生活陷入低谷。"
+                    ],
+                    tips: "全面調整家居風水，搬遷或重新裝修，佩戴玉器或進行祈福儀式。"
+                },
+                en: {
+                    subtitle: "Crisis Abounds, Overhaul Needed",
+                    fengshui: "Your home has severe negative Feng Shui (e.g., multiple negative energies, clashing doors/windows, or persistent darkness). Your destiny is heavily misaligned, clashing with Tai Sui or tomb energy.",
+                    events: [
+                        "Career: Career stagnation, intense workplace competition, risk of marginalization.",
+                        "Money: Severe financial losses, potential bankruptcy or bankruptcy risks.",
+                        "Wealth: Severe financial losses, potential bankruptcy or debt.",
+                        "Love: Complete relationship breakdowns, singles lack romance, couples beware.",
+                        "Health: Major health issues, monitor chronic conditions, accident risks.",
+                        "Other: Plans collapse, life hits disgusting."
+                    ],
+                    tips: "Overhaul your home’s Feng Shui, consider relocating or redecorating, wear jade or perform blessing rituals."
+                }
+            },
+            1: {
+                zh: {
+                    subtitle: "運勢極差，謹防範圍",
+                    fengshui: "家居位於流年最凶方位（如五黃與二黑星重疊），環境髒亂，個人命脈完全沖克流年，犯多重凶星。",
+                    events: [
+                        "事業：事業崩潰，可能失業或公司倒閉。",
+                        "財運：破財嚴重，可能面臨破產或債務危機。",
+                        "感情：感情徹底破裂，家庭危機或離婚風險。",
+                        "健康：嚴重疾病或意外傷害，需高度警惕。",
+                        "其他：官非纏身，生活全面失控，需尋求外界幫助。"
+                    ],
+                    tips: "立即搬離凶宅，尋求專業人士化解，進行宗教或心靈儀式以穩定心態。"
+                },
+                en: {
+                    subtitle: "Extremely Poor Luck, Beware",
+                    fengshui: "Your home is in the worst direction for the year (e.g., where Five Yellow and Two Black Stars overlap), with a messy environment. Your destiny completely clashes with the year, afflicted by multiple unlucky stars.",
+                    events: [
+                        "Career: Career collapses, possible unemployment or business failure.",
+                        "Wealth: Severe financial loss, risk of bankruptcy or debt crisis.",
+                        "Love: Total relationship breakdowns, family crises, or divorce risks.",
+                        "Health: Serious illnesses or accidents, stay highly vigilant.",
+                        "Other: Legal troubles, life spirals out of control, seek external help."
+                    ],
+                    tips: "Move out of the problematic home immediately, consult a Feng Shui master, and perform spiritual rituals to stabilize your mindset."
+                }
+            }
+        };
+
+        let currentLang = 'en';
+        let hasSpun = false;
+
+        document.getElementById('toggle-lang').onclick = function() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateLanguage();
+            if (document.getElementById('result-container').style.display === 'block') {
+                const score = document.getElementById('result-score').innerText;
+                updateResult(parseInt(score));
+            }
+        };
+
+        function updateLanguage() {
+            document.getElementById('title').innerText = translations[currentLang].title;
+            document.getElementById('spin-button').innerText = translations[currentLang].spinButton;
+            document.getElementById('toggle-lang').innerText = translations[currentLang].toggleLang;
+            document.getElementById('result-title').innerHTML = translations[currentLang].resultTitle + '<span id="result-score"></span>';
+            document.getElementById('fengshui-title').innerText = translations[currentLang].fengshuiTitle;
+            document.getElementById('events-title').innerText = translations[currentLang].eventsTitle;
+            document.getElementById('tips-title').innerText = translations[currentLang].tipsTitle;
+            document.getElementById('back-home').innerText = translations[currentLang].backButton;
+        }
+
+        document.getElementById('spin-button').onclick = function() {
+            if (hasSpun) return;
+            hasSpun = true;
+            document.getElementById('spin-button').disabled = true;
+
+            const wheel = document.getElementById('wheel');
+            const randomDegree = Math.floor(Math.random() * 360) + 720;
+            wheel.style.transform = `rotate(${randomDegree}deg)`;
+
+            setTimeout(() => {
+                const normalizedDegree = randomDegree % 360;
+                const score = Math.floor((360 - normalizedDegree) / 36) + 1;
+                updateResult(score);
+            }, 3000);
+        };
+
+        document.getElementById('back-home').onclick = function() {
+            window.location.href = 'index.html';
+        };
+
+        function updateResult(score) {
+            document.getElementById('result-score').innerText = score;
+            document.getElementById('result-subtitle').innerText = luckData[score][currentLang].subtitle;
+            document.getElementById('fengshui-desc').innerText = luckData[score].title;
+            document.getElementById('tips-desc').innerText = luckData[score][currentLang].tips;
+
+            const eventsList = document.getElementById('events-list');
+            eventsList.innerHTML = '';
+            luckData[score][currentLang].events.forEach(event => {
+                const li = document.createElement('li');
+                li.innerText = event;
+                eventsList.appendChild(li);
+            });
+
+            document.getElementById('result-container').style.display = 'block';
+            }
+
+        updateLanguage();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

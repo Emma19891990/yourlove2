@@ -1,0 +1,198 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Luck Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .product-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .product-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+        .paypal-alternative {
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .telegram-qr {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .language-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="language-toggle">
+        <button id="toggle-lang" class="btn btn-primary">Switch to Chinese</button>
+    </div>
+    <div class="container">
+        <div class="product-container">
+            <h2 class="text-center" id="title">Every Day Brings Different Luck, Give It a Try!</h2>
+            <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba" class="product-image" alt="Lucky Test">
+            <p class="mt-3"><strong id="desc-title">Description:</strong> <span id="desc">$1 to test your daily luck, try it now!</span></p>
+            <p><strong id="price-title">Price:</strong> $1.00</p>
+            <div id="paypal-button-container" class="text-center">
+                <div id="paypal-buttons"></div>
+                <button id="join-spin" class="btn btn-primary mt-2" disabled>Join Spin</button>
+            </div>
+            <p class="paypal-alternative text-center" id="paypal-alt-text">Pay directly via PayPal at: <a href="https://www.paypal.com/ncp/payment/AJ2HP2PHTLHP2" target="_blank">Click to Pay</a></p>
+            <div class="telegram-qr">
+                <h5 id="contact-title">Contact Us</h5>
+                <a href="https://t.me/helloboy113" target="_blank" id="contact-link">Click here to contact us</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_CLIENT_ID&currency=USD"></script>
+    <script>
+        const translations = {
+            en: {
+                title: "Every Day Brings Different Luck, Give It a Try!",
+                descTitle: "Description:",
+                desc: "$1 to test your daily luck, try it now!",
+                priceTitle: "Price:",
+                paypal: "Pay directly via PayPal at:",
+                paypalButton: "Pay with PayPal",
+                joinSpin: "Join Spin",
+                contactTitle: "Contact Us",
+                contactLink: "Click here to contact us",
+                toggleLang: "Switch to Chinese"
+            },
+            zh: {
+                title: "每天運氣都不同，試試你的運氣！",
+                descTitle: "描述：",
+                desc: "$1 可測試你當天運氣，立即試試！",
+                priceTitle: "價格：",
+                paypal: "直接通過 PayPal 付款至：",
+                paypalButton: "使用 PayPal 付款",
+                joinSpin: "參加旋轉",
+                contactTitle: "聯繫我們",
+                contactLink: "點擊這裡聯繫我們",
+                toggleLang: "切換到英文"
+            }
+        };
+
+        let currentLang = 'en';
+
+        document.getElementById('toggle-lang').onclick = function() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateLanguage();
+        };
+
+        function updateLanguage() {
+            document.getElementById('title').innerText = translations[currentLang].title;
+            document.getElementById('desc-title').innerText = translations[currentLang].descTitle;
+            document.getElementById('desc').innerText = translations[currentLang].desc;
+            document.getElementById('price-title').innerText = translations[currentLang].priceTitle;
+            document.getElementById('paypal-alt-text').innerHTML = `${translations[currentLang].paypal} <a href="https://www.paypal.com/ncp/payment/AJ2HP2PHTLHP2" target="_blank">Click to Pay</a>`;
+            document.getElementById('contact-title').innerText = translations[currentLang].contactTitle;
+            document.getElementById('contact-link').innerText = translations[currentLang].contactLink;
+            document.getElementById('join-spin').innerText = translations[currentLang].joinSpin;
+            document.getElementById('toggle-lang').innerText = translations[currentLang].toggleLang;
+        }
+
+        // Check payment status on page load
+        function checkPaymentStatus() {
+            if (localStorage.getItem('paymentCompleted') === 'true') {
+                document.getElementById('join-spin').disabled = false;
+            }
+        }
+
+        // PayPal Button Integration
+        paypal.Buttons({
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            value: '1.00',
+                            currency_code: 'USD'
+                        }
+                    }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    localStorage.setItem('paymentCompleted', 'true');
+                    window.location.href = 'index.html?payment=success';
+                });
+            }
+        }).render('#paypal-buttons');
+
+        // Join Spin button handler
+        document.getElementById('join-spin').onclick = function() {
+            if (!this.disabled) {
+                window.location.href = 'result.html';
+            }
+        };
+
+        // Handle redirect after payment
+        if (window.location.search.includes('payment=success')) {
+            localStorage.setItem('paymentCompleted', 'true');
+            document.getElementById('join-spin').disabled = false;
+            // Clear URL parameters
+            window.history.replaceState({}, document.title, 'index.html');
+        }
+
+        checkPaymentStatus();
+        updateLanguage();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
