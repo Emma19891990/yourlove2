@@ -6,49 +6,156 @@
     <title>MAMA音樂頒獎禮 2025</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 20px;
             background-color: #f9f9f9;
         }
+
         h1 {
             text-align: center;
         }
+
         .content {
             text-align: center;
             margin: 20px 0;
         }
+
         img {
             max-width: 100%;
             height: auto;
         }
+
+        .important {
+            color: red;
+        }
+
         .payment-info {
             margin-top: 20px;
             font-size: 1.2em;
         }
+
         .payment-link {
             margin-top: 10px;
         }
+
+        /* 設定系統字體 */
+        @font-face {
+            font-family: 'SystemFont';
+            src: local('Arial'), local('Helvetica');
+        }
+
+        body {
+            font-family: 'SystemFont', sans-serif;
+        }
+
+        /* 針對不同的裝置字體設置 */
+        @media (max-width: 600px) {
+            body {
+                font-size: 14px; /* 手機 */
+            }
+        }
+
+        @media (min-width: 601px) and (max-width: 1024px) {
+            body {
+                font-size: 16px; /* 平板 */
+            }
+        }
+
+        @media (min-width: 1025px) {
+            body {
+                font-size: 18px; /* 桌面 */
+            }
+        }
+
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .language-selector select {
+            padding: 5px;
+        }
     </style>
+    <script>
+        function changeLanguage() {
+            const language = document.getElementById('language').value;
+            const title = document.getElementById('title');
+            const date = document.getElementById('date');
+            const venue = document.getElementById('venue');
+            const deposit = document.getElementById('deposit');
+            const seatInfo = document.getElementById('seatInfo');
+            const payment = document.getElementById('payment');
+            const telegramLink = document.getElementById('telegramLink');
+            const wechat = document.getElementById('wechat');
+            const contact = document.getElementById('contact');
+            const afterPayment = document.getElementById('afterPayment');
+
+            if (language === 'zh-Hant') {
+                title.innerText = '《MAMA音樂頒獎禮》2025｜詳情';
+                date.innerText = '舉辦日期：2025年11月28日至29日';
+                venue.innerText = '舉辦地點：香港啟德體育園主場館';
+                deposit.innerText = '門票訂金：$500';
+                seatInfo.innerText = '*座位會在官方公佈後,在此網站更新,買家可根據期望座位要求通知本人。*';
+                payment.innerText = '點擊支付:';
+                telegramLink.innerHTML = '付款後點擊telegram連結: <a href="https://t.me/helloboy113" target="_blank">@helloboy113</a>';
+                wechat.innerText = '#中國用戶可微信:13202272951';
+                contact.innerText = '如無法支付,請直接通過以上連結聯系本人';
+                afterPayment.innerText = '付款後所有問題通訊軟件回答';
+            } else if (language === 'zh-Hans') {
+                title.innerText = '《MAMA音乐颁奖礼》2025｜详情';
+                date.innerText = '举办日期：2025年11月28日至29日';
+                venue.innerText = '举办地点：香港启德体育园主场馆';
+                deposit.innerText = '门票订金：$500';
+                seatInfo.innerText = '*座位将在官方公布后,在此网站更新,买家可根据期望座位要求通知本人。*';
+                payment.innerText = '点击支付:';
+                telegramLink.innerHTML = '付款后点击telegram链接: <a href="https://t.me/helloboy113" target="_blank">@helloboy113</a>';
+                wechat.innerText = '#中国用户可微信:13202272951';
+                contact.innerText = '如无法支付,请直接通过以上链接联系本人';
+                afterPayment.innerText = '付款后所有问题通讯软件回答';
+            } else if (language === 'en') {
+                title.innerText = 'MAMA Music Awards 2025 | Details';
+                date.innerText = 'Event Date: November 28 to 29, 2025';
+                venue.innerText = 'Venue: Kai Tak Sports Park, Hong Kong';
+                deposit.innerText = 'Ticket Deposit: $500';
+                seatInfo.innerText = '*Seat information will be updated on this website after the official announcement. Buyers can notify me of their desired seating preferences.*';
+                payment.innerText = 'Click to Pay:';
+                telegramLink.innerHTML = 'After payment, click the telegram link: <a href="https://t.me/helloboy113" target="_blank">@helloboy113</a>';
+                wechat.innerText = '#Chinese users can WeChat: 13202272951';
+                contact.innerText = 'If payment fails, please contact me directly through the above link';
+                afterPayment.innerText = 'For any issues after payment, please respond via messaging software';
+            }
+        }
+    </script>
 </head>
 <body>
 
-    <h1>《MAMA音樂頒獎禮》2025｜詳情</h1>
+    <div class="language-selector">
+        <select id="language" onchange="changeLanguage()">
+            <option value="zh-Hant">繁體中文</option>
+            <option value="zh-Hans">簡體中文</option>
+            <option value="en">English</option>
+        </select>
+    </div>
+
+    <h1 id="title">《MAMA音樂頒獎禮》2025｜詳情</h1>
     
     <div class="content">
         <img src="https://cdn.hk01.com/di/media/images/dw/20250529/1004721383655084032843915.jpeg/rgmrI_ZgZIkoq2VHPxUS0yum3got7mBv5561LeeetS0?v=w1920r16_9" alt="MAMA音樂頒獎禮">
-        <p>舉辦日期：2025年11月28日至29日</p>
-        <p>舉辦地點：香港啟德體育園主場館</p>
-        <p>門票訂金：$500</p>
+        <p id="date">舉辦日期：2025年11月28日至29日</p>
+        <p id="venue">舉辦地點：香港啟德體育園主場館</p>
+        <p id="deposit">門票訂金：$500</p>
+        <p class="important" id="seatInfo">*座位會在官方公佈後,在此網站更新,買家可根據期望座位要求通知本人。*</p>
     </div>
 
     <div class="payment-info">
-        <p>點擊支付:</p>
+        <p id="payment">點擊支付:</p>
         <div class="payment-link">
             <a href="https://www.paypal.com/ncp/payment/YSYPSDR62TWWW" target="_blank">1. Paypal</a>
         </div>
-        <p>付款後點擊telegram連結: <a href="https://t.me/helloboy113" target="_blank">@helloboy113</a></p>
-        <p>#中國用戶可微信:13202272951</p>
-        <p>如無法支付,請直接通過以上連結聯系本人</p>
+        <p id="telegramLink">付款後點擊telegram連結: <a href="https://t.me/helloboy113" target="_blank">@helloboy113</a></p>
+        <p id="wechat">#中國用戶可微信:13202272951</p>
+        <p id="contact">如無法支付,請直接通過以上連結聯系本人</p>
+        <p id="afterPayment">付款後所有問題通訊軟件回答</p>
     </div>
 
 </body>
